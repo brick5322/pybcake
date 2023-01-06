@@ -1,0 +1,9 @@
+Package: bmake-python3.9
+Version: 0.9.8
+Architecture: amd64
+Section: utils
+Maintainer: Liu Fubaichuan <huahui36113@163.com>
+Priority: optional
+Depends: libpython3.9
+Installed-Size: 65910
+Description: a utility to control the generation  of executables
