@@ -1,4 +1,4 @@
-Package: bmake-python3.9
+Package: bcake-python3.9
 Version: 0.9.8
 Architecture: amd64
 Section: utils
