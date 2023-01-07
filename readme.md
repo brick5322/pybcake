@@ -16,9 +16,9 @@ linux下构建工具
 
 
 
-`work method`:
+`work method`:bcake.py中的方法
 
-`options`:
+`options`:传入bcake.py的参数
 
 在项目文件下创建一个`bcake.py`脚本。
 
