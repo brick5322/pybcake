@@ -10,31 +10,40 @@ class SourceFile:
 
     def find_dependency(self):
         src_dir, src_name = os.path.split(self.filename)
-        inc_dependency = []
-        with open(self.filename) as fp:
-            line = fp.readline()
-            while line:
-                inc_dependency += re.findall('#include *"(.*)"\n', line)
-                line = fp.readline()
-
-        dep_dirs: list[str] = []
-        for dep_dir in self.include_dirs + [src_dir]:
-            if len(dep_dir) == 0:
-                continue
-            elif dep_dir.endswith("/"):
-                dep_dirs.append(dep_dir)
-            else:
-                dep_dirs.append(dep_dir + "/")
-
-        for depend in inc_dependency:
-            for dep_dir in self.include_dirs + [src_dir]:
-                dep_file = dep_dir + depend
-                if os.path.exists(dep_file):
-                    self.dependency += [dep_file]
-                    self.dependency += SourceFile(dep_file, self.include_dirs).find_dependency()
-                    self.dependency = list(set(self.dependency))
-                    break
+        if src_name.endswith(".c") or src_name.endswith(".cpp") \
+                or src_name.endswith(".h") or src_name.endswith(".hpp"):
+            self.dependency += c_find_dependency(self.filename, self.include_dirs)
         return self.dependency
+
+
+def c_find_dependency(filename: str, include_dirs: list, ):
+    src_dir, src_name = os.path.split(filename)
+    finc_dependency = []
+    with open(filename) as fp:
+        line = fp.readline()
+        while line:
+            finc_dependency += re.findall('#include *"(.*)"\n', line)
+            line = fp.readline()
+
+    dep_dirs: list[str] = []
+    dependency = []
+    for dep_dir in include_dirs + [src_dir]:
+        if len(dep_dir) == 0:
+            continue
+        elif dep_dir.endswith("/"):
+            dep_dirs.append(dep_dir)
+        else:
+            dep_dirs.append(dep_dir + "/")
+
+    for depend in finc_dependency:
+        for dep_dir in include_dirs + [src_dir]:
+            dep_file = dep_dir + depend
+            if os.path.exists(dep_file):
+                dependency += [dep_file]
+                dependency += SourceFile(dep_file, include_dirs).find_dependency()
+                dependency = list(set(dependency))
+                break
+    return dependency
 
 
 class Target:
@@ -257,4 +266,3 @@ def target_is_latest(target_file: str, dependency: list) -> bool:
 def verify_dir(directory: str):
     if not os.path.exists(directory):
         os.makedirs(directory)
-
