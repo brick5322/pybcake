@@ -161,7 +161,6 @@ class Target:
         return True
 
     def update_obj(self, src_name: SourceFile):
-        verify_dir(self.object_dir)
         obj_name = None
         compiler = None
         for (k, v) in self.compilers.items():
@@ -176,6 +175,7 @@ class Target:
         if target_is_latest(self.object_dir + obj_name, src_name.dependency + [src_name.filename]):
             return self.object_dir + obj_name
 
+        verify_dir(os.path.split(self.object_dir + obj_name)[0])
         command = compiler + " -c -o " + self.object_dir + obj_name
         command += " "
         command += src_name.filename
