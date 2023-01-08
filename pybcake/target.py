@@ -4,16 +4,19 @@ import re
 
 class SourceFile:
     def __init__(self, filename: str, include_dirs: list):
+        self.dependency = []
         self.filename = filename
         self.include_dirs = include_dirs
-        self.dependency = []
 
-    def find_dependency(self):
-        src_dir, src_name = os.path.split(self.filename)
-        if src_name.endswith(".c") or src_name.endswith(".cpp") \
-                or src_name.endswith(".h") or src_name.endswith(".hpp"):
-            self.dependency += c_find_dependency(self.filename, self.include_dirs)
-        return self.dependency
+    def __setattr__(self, key, value):
+        dependency = []
+        if key == "include_dirs":
+            src_dir, src_name = os.path.split(self.filename)
+            if src_name.endswith(".c") or src_name.endswith(".cpp") \
+                    or src_name.endswith(".h") or src_name.endswith(".hpp"):
+                dependency += c_find_dependency(self.filename, value)
+                object.__setattr__(self, "dependency", dependency)
+        return object.__setattr__(self, key, value)
 
 
 def c_find_dependency(filename: str, include_dirs: list, ):
@@ -34,13 +37,14 @@ def c_find_dependency(filename: str, include_dirs: list, ):
             dep_dirs.append(dep_dir)
         else:
             dep_dirs.append(dep_dir + "/")
+        dep_dirs = list(set(dep_dirs))
 
     for depend in finc_dependency:
-        for dep_dir in include_dirs + [src_dir]:
+        for dep_dir in dep_dirs:
             dep_file = dep_dir + depend
             if os.path.exists(dep_file):
                 dependency += [dep_file]
-                dependency += SourceFile(dep_file, include_dirs).find_dependency()
+                dependency += SourceFile(dep_file, include_dirs).dependency
                 dependency = list(set(dependency))
                 break
     return dependency
@@ -56,14 +60,15 @@ class Target:
     def __init__(self, source_files: list, target_name: str, target_type="exe"):
         if target_type != "exe" and target_type != "lib" and target_type != "so":
             raise ValueError("type should be \"exe\" or \"lib\" or \"so\"")
-        self.run_commamd = None
+        self.obj_files = set([])
+        self.run_command = None
         self.target_type = target_type
         self.compiler = None
         self.target_dir = "./"
         self.object_dir = "./obj"
+        self.source_files = source_files
         self.include_dirs = []
         self.target_name = target_name
-        self.source_files = source_files
         self.definitions = []
         self.lib_dirs = []
         self.libs = []
@@ -77,22 +82,29 @@ class Target:
             if not re.findall("lib.*\\.so", target_name):
                 self.target_name = "lib" + target_name + ".so"
         if target_type == "exe":
-            self.run_commamd = self.target_dir + self.target_name
+            self.run_command = self.target_dir + self.target_name
 
     def __setattr__(self, key, value):
+        if key == "target_name":
+            invalid = {'\\', '/', ':', '*', '?', '"', '<', '>', '|', ' '}
+            value_set = set(value)
+            if not value_set & invalid:
+                return object.__setattr__(self, key, value)
+            else:
+                raise ValueError("target_name cannot contain special characters " + str(value_set & invalid))
         if key == "target_dir":
             target_dir = value
             if not target_dir.endswith("/"):
                 target_dir += "/"
-            if hasattr(self, "target_name") and hasattr(self, "target_dir") and hasattr(self, "execute_command"):
+            if hasattr(self, "target_name") and hasattr(self, "target_dir"):
                 if self.target_type == "exe":
-                    if self.run_commamd == self.target_dir + self.target_name or self.run_commamd is None:
+                    if not callable(self.run_command) or self.run_command != self.target_dir + self.target_name:
                         object.__setattr__(self, "run_command", target_dir + self.target_name)
             return object.__setattr__(self, key, target_dir)
         elif key == "target_name":
-            if hasattr(self, "target_name") and hasattr(self, "target_dir") and hasattr(self, "execute_command"):
+            if hasattr(self, "target_name") and hasattr(self, "target_dir"):
                 if self.target_type == "exe":
-                    if self.run_commamd == self.target_dir + self.target_name or self.run_commamd is None:
+                    if not callable(self.run_command) or self.run_command != self.target_dir + self.target_name:
                         object.__setattr__(self, "run_command", self.target_dir + self.target_name)
         elif key == "object_dir":
             obj_dir = value
@@ -103,12 +115,20 @@ class Target:
             src_files = []
             for i in value:
                 if isinstance(i, str):
+                    if not hasattr(self, "include_dirs"):
+                        self.include_dirs = []
                     src_file = SourceFile(i, self.include_dirs)
-                    src_file.find_dependency()
                     src_files.append(src_file)
                 if isinstance(i, SourceFile):
                     src_files.append(i)
             return object.__setattr__(self, key, src_files)
+        elif key == "include_dirs":
+            if not hasattr(self, "source_files"):
+                return object.__setattr__(self, key, value)
+            for i in self.source_files:
+                assert isinstance(i, SourceFile)
+                if i.include_dirs is self.include_dirs:
+                    i.include_dirs = value
         return object.__setattr__(self, key, value)
 
     def make(self, run: bool = False):
@@ -127,14 +147,16 @@ class Target:
                 dependency_files.append(dependency.target_dir + dependency.target_name)
         if target_is_latest(self.target_dir + self.target_name, obj_files + dependency_files):
             if run:
-                if callable(self.run_commamd):
-                    print("\nno builing work,run latest \"" + self.run_commamd(self) + "\":")
-                    os.system(self.run_commamd(self))
-                    print("")
-                elif self.run_commamd is not None:
-                    print("\nno builing work,run latest \"" + self.run_commamd + "\":")
-                    os.system(self.run_commamd)
-                    print("")
+                if callable(self.run_command):
+                    print("\nno builing work,run latest \"" +
+                          self.run_command(self) +
+                          "\":" + os.popen(self.run_command(self) + " 2>&1").read() +
+                          "\n\n", end='')
+                elif self.run_command is not None:
+                    print("\nno builing work,run latest \"" +
+                          self.run_command +
+                          "\":" + os.popen(self.run_command + " 2>&1").read() +
+                          "\n\n", end='')
                 else:
                     raise ValueError("self.execute_command is None and cannot be set automatically")
             return False
@@ -148,14 +170,16 @@ class Target:
             self.make_so(obj_files)
 
         if run:
-            if callable(self.run_commamd):
-                print("\nrunning \"" + self.run_commamd(self) + "\":")
-                os.system(self.run_commamd(self))
-                print("")
-            elif self.run_commamd is not None:
-                print("\nrunning \"" + self.run_commamd + "\":")
-                os.system(self.run_commamd)
-                print("")
+            if callable(self.run_command):
+                print("\nrunning \"" +
+                      self.run_command(self) +
+                      "\":" + os.popen(self.run_command(self) + " 2>&1").read() +
+                      "\n\n", end='')
+            elif self.run_command is not None:
+                print("\nrunning \"" +
+                      self.run_command +
+                      "\":" + os.popen(self.run_command + " 2>&1").read() +
+                      "\n\n", end='')
             else:
                 raise ValueError("self.execute_command is None and cannot be set automatically")
         return True
@@ -172,6 +196,7 @@ class Target:
         if compiler == "g++":
             if not self.libs.count("stdc++"):
                 self.libs.append("stdc++")
+        self.obj_files.add(self.object_dir + obj_name)
         if target_is_latest(self.object_dir + obj_name, src_name.dependency + [src_name.filename]):
             return self.object_dir + obj_name
 
@@ -185,22 +210,10 @@ class Target:
             command += " -D" + define
         for opt in self.options:
             command += " " + opt
-        print(command)
-        os.system(command)
+        print(command + "\n" + os.popen(command + " 2>&1").read(), end='')
         return self.object_dir + obj_name
 
     def clean(self, reserve_target: bool = False):
-        if os.path.exists(self.object_dir):
-            for _, _, files in os.walk(self.object_dir):
-                for name in files:
-                    try:
-                        os.remove(self.object_dir + name)
-                    except FileNotFoundError:
-                        pass
-            try:
-                os.removedirs(self.object_dir)
-            except OSError:
-                pass
         if os.path.exists(self.target_dir + self.target_name):
             if not reserve_target:
                 try:
@@ -211,6 +224,29 @@ class Target:
                     os.removedirs(self.target_dir)
                 except OSError:
                     pass
+        obj_names = set([])
+        obj_dirs = set([])
+        for (k, v) in self.compilers.items():
+            for src_name in self.source_files:
+                if src_name.filename.endswith(k):
+                    if self.object_dir.endswith("/"):
+                        obj_names.add(self.object_dir + src_name.filename[:-len(k)] + ".o")
+                    else:
+                        obj_names.add(self.object_dir + "/" + src_name.filename[:-len(k)] + ".o")
+        for i in obj_names:
+            obj_dirs.add(os.path.split(i)[0])
+            try:
+                os.remove(i)
+                print("remove " + i)
+            except FileNotFoundError:
+                pass
+
+        for i in obj_dirs:
+            try:
+                os.removedirs(i)
+                print("remove directories" + i)
+            except OSError:
+                pass
 
     def make_exe(self, obj_files):
         command = self.compiler + " -o " + self.target_dir + self.target_name
@@ -223,16 +259,14 @@ class Target:
             command += " -l" + lib
         for opt in self.options:
             command += " " + opt
-        print(command)
-        os.system(command)
+        print(command + "\n" + os.popen(command + " 2>&1").read(), end='')
 
     def make_lib(self, obj_files: list):
         command = "ar rcs " + self.target_dir + self.target_name
         for file in obj_files:
             command += " "
             command += file
-        print(command)
-        os.system(command)
+        print(command + "\n" + os.popen(command + " 2>&1").read(), end='')
 
     def make_so(self, obj_files: list):
         command = self.compiler + "-fPIC -shared -o " + self.target_dir + self.target_name
@@ -245,6 +279,7 @@ class Target:
             command += " -l" + lib
         for opt in self.options:
             command += " " + opt
+        print(command + "\n" + os.popen(command + " 2>&1").read(), end='')
 
     def add_dependency(self, dependency: object):
         if not self.proj_dependencies.count(dependency):
