@@ -1,6 +1,7 @@
 #pragma once
 #include <fstream>
 #include <mutex>
+#include <chrono>
 
 enum class LogLevel { All, Debug, Info, Warning, Error, Critical };
 

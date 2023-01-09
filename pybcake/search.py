@@ -53,3 +53,25 @@ def find_c_dependency(filename: str, include_dirs: list, ):
                 dependency = list(set(dependency))
                 break
     return dependency
+
+
+def find_pkg(pkg_name: str, cflags=True, lib_dirs=True, libs=True):
+    ret = {
+        "cflags": [],
+        "libs": [],
+        "lib_dirs": []
+    }
+    tmp_strs = os.popen("pkg-config --cflags --libs " + pkg_name).read().split(' ')
+    if not tmp_strs:
+        return ret
+    tmp_strs[-1] = tmp_strs[-1][:-1]
+    for i in tmp_strs:
+        if len(i) < 2:
+            continue
+        elif i[1] == 'I':
+            ret["cflags"].append(i[2:])
+        elif i[1] == 'L':
+            ret["lib_dirs"].append(i[2:])
+        elif i[1] == 'l':
+            ret["libs"].append(i[2:])
+    return ret

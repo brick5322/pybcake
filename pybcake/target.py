@@ -134,18 +134,18 @@ class Target:
         try:
             print("\nrunning \"" +
                   run_command +
-                  "\":" + os.popen(run_command + " 2>&1").read() +
+                  "\":\n" + os.popen(run_command + " 2>&1").read() +
                   "\n\n", end='')
         except TypeError:
             if callable(self.run_command):
                 print("\nrunning \"" +
                       self.run_command(self) +
-                      "\":" + os.popen(self.run_command(self) + " 2>&1").read() +
+                      "\":\n" + os.popen(self.run_command(self) + " 2>&1").read() +
                       "\n\n", end='')
             elif self.run_command is not None:
                 print("\nrunning \"" +
                       self.run_command +
-                      "\":" + os.popen(self.run_command + " 2>&1").read() +
+                      "\":\n" + os.popen(self.run_command + " 2>&1").read() +
                       "\n\n", end='')
             else:
                 raise ValueError("self.run_command is None and cannot be set automatically")

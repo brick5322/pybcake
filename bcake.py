@@ -24,6 +24,7 @@ def release():
 
 def install():
     bcake.make()
+    os.system("sudo rm /usr/lib/python3/dist-packages/pybcake/*")
     os.system("sudo cp -r ./pybcake /usr/lib/python3/dist-packages")
     bcake.run()
     bcake.clean(reserve_target=True)
@@ -31,6 +32,7 @@ def install():
 
 def multi():
     bcake.make(4)
+    os.system("sudo rm /usr/lib/python3/dist-packages/pybcake/*")
     os.system("sudo cp -r ./pybcake /usr/lib/python3/dist-packages")
     bcake.run()
     bcake.clean(reserve_target=True)
