@@ -91,85 +91,6 @@ class Target:
             i.make()
         return self.make_self(run)
 
-    def make_self(self, run: bool = False):
-        verify_dir(self.object_dir)
-        obj_files = []
-        for source in self.source_files:
-            obj_files.append(self.update_obj(source))
-        dependency_files = []
-        for dependency in self.proj_dependencies:
-            assert isinstance(dependency, Target)
-            if dependency.target_type != "exe":
-                dependency_files.append(dependency.target_dir + dependency.target_name)
-        if target_is_latest(self.target_dir + self.target_name, obj_files + dependency_files):
-            if run:
-                if callable(self.run_command):
-                    print("\nno builing work,run latest \"" +
-                          self.run_command(self) +
-                          "\":" + os.popen(self.run_command(self) + " 2>&1").read() +
-                          "\n\n", end='')
-                elif self.run_command is not None:
-                    print("\nno builing work,run latest \"" +
-                          self.run_command +
-                          "\":" + os.popen(self.run_command + " 2>&1").read() +
-                          "\n\n", end='')
-                else:
-                    raise ValueError("self.execute_command is None and cannot be set automatically")
-            return False
-
-        verify_dir(self.target_dir)
-        if self.target_type == "exe":
-            self.make_exe(obj_files)
-        if self.target_type == "lib":
-            self.make_lib(obj_files)
-        if self.target_type == "so":
-            self.make_so(obj_files)
-
-        if run:
-            if callable(self.run_command):
-                print("\nrunning \"" +
-                      self.run_command(self) +
-                      "\":" + os.popen(self.run_command(self) + " 2>&1").read() +
-                      "\n\n", end='')
-            elif self.run_command is not None:
-                print("\nrunning \"" +
-                      self.run_command +
-                      "\":" + os.popen(self.run_command + " 2>&1").read() +
-                      "\n\n", end='')
-            else:
-                raise ValueError("self.execute_command is None and cannot be set automatically")
-        return True
-
-    def update_obj(self, src_name: SourceFile):
-        obj_name = None
-        compiler = None
-        for (k, v) in self.compilers.items():
-            if src_name.filename.endswith(k):
-                obj_name = src_name.filename[:-len(k)] + ".o"
-                compiler = v
-        if compiler is None:
-            raise ValueError(src_name.filename + "cannot find matched compiler")
-        if compiler == "g++":
-            if not self.libs.count("stdc++"):
-                self.libs.append("stdc++")
-        self.obj_files.add(self.object_dir + obj_name)
-        if target_is_latest(self.object_dir + obj_name, src_name.dependency + [src_name.filename]):
-            return self.object_dir + obj_name
-
-        verify_dir(os.path.split(self.object_dir + obj_name)[0])
-        command = compiler + " -c -o " + self.object_dir + obj_name
-        command += " "
-        command += src_name.filename
-        for inc_dir in self.include_dirs:
-            command += " -I" + inc_dir
-        for define in self.definitions:
-            command += " -D" + define
-        for opt in self.options:
-            command += " " + opt
-        print(command)
-        print(os.popen(command + " 2>&1").read(), end='')
-        return self.object_dir + obj_name
-
     def clean(self, reserve_target: bool = False):
         if os.path.exists(self.target_dir + self.target_name):
             if not reserve_target:
@@ -204,6 +125,85 @@ class Target:
                 print("remove directories" + i)
             except OSError:
                 pass
+
+    def make_self(self, run: bool = False):
+        verify_dir(self.object_dir)
+        obj_files = []
+        for source in self.source_files:
+            obj_files.append(self.update_obj(source))
+        dependency_files = []
+        for dependency in self.proj_dependencies:
+            assert isinstance(dependency, Target)
+            if dependency.target_type != "exe":
+                dependency_files.append(dependency.target_dir + dependency.target_name)
+        if target_is_latest(self.target_dir + self.target_name, obj_files + dependency_files):
+            if run:
+                if callable(self.run_command):
+                    print("\nno builing work,run latest \"" +
+                          self.run_command(self) +
+                          "\":" + os.popen(self.run_command(self) + " 2>&1").read() +
+                          "\n\n", end='')
+                elif self.run_command is not None:
+                    print("\nno builing work,run latest \"" +
+                          self.run_command +
+                          "\":" + os.popen(self.run_command + " 2>&1").read() +
+                          "\n\n", end='')
+                else:
+                    raise ValueError("self.run_command is None and cannot be set automatically")
+            return False
+
+        verify_dir(self.target_dir)
+        if self.target_type == "exe":
+            self.make_exe(obj_files)
+        if self.target_type == "lib":
+            self.make_lib(obj_files)
+        if self.target_type == "so":
+            self.make_so(obj_files)
+
+        if run:
+            if callable(self.run_command):
+                print("\nrunning \"" +
+                      self.run_command(self) +
+                      "\":" + os.popen(self.run_command(self) + " 2>&1").read() +
+                      "\n\n", end='')
+            elif self.run_command is not None:
+                print("\nrunning \"" +
+                      self.run_command +
+                      "\":" + os.popen(self.run_command + " 2>&1").read() +
+                      "\n\n", end='')
+            else:
+                raise ValueError("self.run_command is None and cannot be set automatically")
+        return True
+
+    def update_obj(self, src_name: SourceFile):
+        obj_name = None
+        compiler = None
+        for (k, v) in self.compilers.items():
+            if src_name.filename.endswith(k):
+                obj_name = src_name.filename[:-len(k)] + ".o"
+                compiler = v
+        if compiler is None:
+            raise ValueError(src_name.filename + "cannot find matched compiler")
+        if compiler == "g++":
+            if not self.libs.count("stdc++"):
+                self.libs.append("stdc++")
+        self.obj_files.add(self.object_dir + obj_name)
+        if target_is_latest(self.object_dir + obj_name, src_name.dependency + [src_name.filename]):
+            return self.object_dir + obj_name
+
+        verify_dir(os.path.split(self.object_dir + obj_name)[0])
+        command = compiler + " -c -o " + self.object_dir + obj_name
+        command += " "
+        command += src_name.filename
+        for inc_dir in self.include_dirs:
+            command += " -I" + inc_dir
+        for define in self.definitions:
+            command += " -D" + define
+        for opt in self.options:
+            command += " " + opt
+        print(command)
+        print(os.popen(command + " 2>&1").read(), end='')
+        return self.object_dir + obj_name
 
     def make_exe(self, obj_files):
         command = self.compiler + " -o " + self.target_dir + self.target_name
