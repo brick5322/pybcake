@@ -2,3 +2,4 @@ __pycache__
 *.deb
 deb_dir/usr
 .idea
+*/__pycache__

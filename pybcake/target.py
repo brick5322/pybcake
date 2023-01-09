@@ -1,5 +1,6 @@
 import os
 import re
+from threading import Thread
 from .sourcefile import SourceFile
 
 
@@ -80,11 +81,14 @@ class Target:
                 return object.__setattr__(self, key, value)
             for i in self.source_files:
                 assert isinstance(i, SourceFile)
-                if i.include_dirs is self.include_dirs:
+                if i.include_dirs == self.include_dirs:
                     i.include_dirs = value
         return object.__setattr__(self, key, value)
 
-    def make(self):
+    def make(self, nb_threads: int = 1):
+        if nb_threads > 1:
+            return multi_make(nb_threads, [self])
+
         if not self.compiler:
             raise ValueError("self.compiler is None and cannot be set automatically")
         for i in self.proj_dependencies:
@@ -240,6 +244,61 @@ class Target:
             self.proj_dependencies.append(dependency)
 
 
+class MultiMake(Thread):
+    def __init__(self, make_obj: Target):
+        super().__init__()
+        self.target = make_obj
+        self.tar_name = make_obj.target_name
+
+    def run(self):
+        self.target.make_self()
+
+
+class MultiUpdObj(Thread):
+    def __init__(self, make_obj: Target, src_file: SourceFile):
+        super().__init__()
+        self.tar_name = src_file.filename
+
+        def run_closure():
+            return make_obj.update_obj(src_file)
+
+        self.run = run_closure
+
+
+def multi_make(nb_thread: int, objs: list):
+    make_works = []
+    for tar in objs:
+        make_works.append(MultiMake(tar))
+        assert isinstance(tar, Target)
+        for src in tar.source_files:
+            make_works.append(MultiUpdObj(tar, src))
+
+    for i in make_works:
+        if isinstance(i, MultiMake):
+            for tar in i.target.proj_dependencies:
+                make_works.append(MultiMake(tar))
+                assert isinstance(tar, Target)
+                for src in tar.source_files:
+                    make_works.append(MultiUpdObj(tar, src))
+
+    make_works = make_works[::-1]
+
+    alive_thread_count = len(make_works) if nb_thread > len(make_works) else nb_thread
+
+    for i in range(alive_thread_count):
+        make_works[i].start()
+    while alive_thread_count:
+        j = 0
+        while j < alive_thread_count:
+            if not make_works[j].is_alive():
+                make_works.pop(j)
+                if len(make_works) >= alive_thread_count:
+                    make_works[alive_thread_count - 1].start()
+                else:
+                    alive_thread_count -= 1
+            j += 1
+
+
 def target_is_latest(target_file: str, dependency: list) -> bool:
     if not os.path.exists(target_file):
         return False
@@ -253,5 +312,7 @@ def target_is_latest(target_file: str, dependency: list) -> bool:
 
 
 def verify_dir(directory: str):
-    if not os.path.exists(directory):
+    try:
         os.makedirs(directory)
+    except FileExistsError:
+        pass

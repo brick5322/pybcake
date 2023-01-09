@@ -24,9 +24,16 @@ def release():
 
 def install():
     bcake.make()
+    os.system("sudo cp -r ./pybcake /usr/lib/python3/dist-packages")
     bcake.run()
     bcake.clean(reserve_target=True)
+
+
+def multi():
+    bcake.make(4)
     os.system("sudo cp -r ./pybcake /usr/lib/python3/dist-packages")
+    bcake.run()
+    bcake.clean(reserve_target=True)
 
 # before you make and install ,uncommit this to make
 # after that, you can commit this to test
