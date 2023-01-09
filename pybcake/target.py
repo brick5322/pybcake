@@ -1,53 +1,6 @@
 import os
 import re
-
-
-class SourceFile:
-    def __init__(self, filename: str, include_dirs: list):
-        self.dependency = []
-        self.filename = filename
-        self.include_dirs = include_dirs
-
-    def __setattr__(self, key, value):
-        dependency = []
-        if key == "include_dirs":
-            src_dir, src_name = os.path.split(self.filename)
-            if src_name.endswith(".c") or src_name.endswith(".cpp") \
-                    or src_name.endswith(".h") or src_name.endswith(".hpp"):
-                dependency += c_find_dependency(self.filename, value)
-                object.__setattr__(self, "dependency", dependency)
-        return object.__setattr__(self, key, value)
-
-
-def c_find_dependency(filename: str, include_dirs: list, ):
-    src_dir, src_name = os.path.split(filename)
-    finc_dependency = []
-    with open(filename) as fp:
-        line = fp.readline()
-        while line:
-            finc_dependency += re.findall('#include *"(.*)"\n', line)
-            line = fp.readline()
-
-    dep_dirs: list[str] = []
-    dependency = []
-    for dep_dir in include_dirs + [src_dir]:
-        if len(dep_dir) == 0:
-            continue
-        elif dep_dir.endswith("/"):
-            dep_dirs.append(dep_dir)
-        else:
-            dep_dirs.append(dep_dir + "/")
-        dep_dirs = list(set(dep_dirs))
-
-    for depend in finc_dependency:
-        for dep_dir in dep_dirs:
-            dep_file = dep_dir + depend
-            if os.path.exists(dep_file):
-                dependency += [dep_file]
-                dependency += SourceFile(dep_file, include_dirs).dependency
-                dependency = list(set(dependency))
-                break
-    return dependency
+from .sourcefile import SourceFile
 
 
 class Target:
@@ -136,6 +89,9 @@ class Target:
             raise ValueError("self.compiler is None and cannot be set automatically")
         for i in self.proj_dependencies:
             i.make()
+        return self.make_self(run)
+
+    def make_self(self, run: bool = False):
         verify_dir(self.object_dir)
         obj_files = []
         for source in self.source_files:
@@ -210,7 +166,8 @@ class Target:
             command += " -D" + define
         for opt in self.options:
             command += " " + opt
-        print(command + "\n" + os.popen(command + " 2>&1").read(), end='')
+        print(command)
+        print(os.popen(command + " 2>&1").read(), end='')
         return self.object_dir + obj_name
 
     def clean(self, reserve_target: bool = False):
@@ -259,14 +216,16 @@ class Target:
             command += " -l" + lib
         for opt in self.options:
             command += " " + opt
-        print(command + "\n" + os.popen(command + " 2>&1").read(), end='')
+        print(command)
+        print(os.popen(command + " 2>&1").read(), end='')
 
     def make_lib(self, obj_files: list):
         command = "ar rcs " + self.target_dir + self.target_name
         for file in obj_files:
             command += " "
             command += file
-        print(command + "\n" + os.popen(command + " 2>&1").read(), end='')
+        print(command)
+        print(os.popen(command + " 2>&1").read(), end='')
 
     def make_so(self, obj_files: list):
         command = self.compiler + "-fPIC -shared -o " + self.target_dir + self.target_name
@@ -279,7 +238,8 @@ class Target:
             command += " -l" + lib
         for opt in self.options:
             command += " " + opt
-        print(command + "\n" + os.popen(command + " 2>&1").read(), end='')
+        print(command)
+        print(os.popen(command + " 2>&1").read(), end='')
 
     def add_dependency(self, dependency: object):
         if not self.proj_dependencies.count(dependency):
