@@ -84,12 +84,12 @@ class Target:
                     i.include_dirs = value
         return object.__setattr__(self, key, value)
 
-    def make(self, run: bool = False):
+    def make(self):
         if not self.compiler:
             raise ValueError("self.compiler is None and cannot be set automatically")
         for i in self.proj_dependencies:
             i.make()
-        return self.make_self(run)
+        return self.make_self()
 
     def clean(self, reserve_target: bool = False):
         if os.path.exists(self.target_dir + self.target_name):
@@ -126,41 +126,13 @@ class Target:
             except OSError:
                 pass
 
-    def make_self(self, run: bool = False):
-        verify_dir(self.object_dir)
-        obj_files = []
-        for source in self.source_files:
-            obj_files.append(self.update_obj(source))
-        dependency_files = []
-        for dependency in self.proj_dependencies:
-            assert isinstance(dependency, Target)
-            if dependency.target_type != "exe":
-                dependency_files.append(dependency.target_dir + dependency.target_name)
-        if target_is_latest(self.target_dir + self.target_name, obj_files + dependency_files):
-            if run:
-                if callable(self.run_command):
-                    print("\nno builing work,run latest \"" +
-                          self.run_command(self) +
-                          "\":" + os.popen(self.run_command(self) + " 2>&1").read() +
-                          "\n\n", end='')
-                elif self.run_command is not None:
-                    print("\nno builing work,run latest \"" +
-                          self.run_command +
-                          "\":" + os.popen(self.run_command + " 2>&1").read() +
-                          "\n\n", end='')
-                else:
-                    raise ValueError("self.run_command is None and cannot be set automatically")
-            return False
-
-        verify_dir(self.target_dir)
-        if self.target_type == "exe":
-            self.make_exe(obj_files)
-        if self.target_type == "lib":
-            self.make_lib(obj_files)
-        if self.target_type == "so":
-            self.make_so(obj_files)
-
-        if run:
+    def run(self, run_command=None):
+        try:
+            print("\nrunning \"" +
+                  run_command +
+                  "\":" + os.popen(run_command + " 2>&1").read() +
+                  "\n\n", end='')
+        except TypeError:
             if callable(self.run_command):
                 print("\nrunning \"" +
                       self.run_command(self) +
@@ -173,7 +145,29 @@ class Target:
                       "\n\n", end='')
             else:
                 raise ValueError("self.run_command is None and cannot be set automatically")
-        return True
+
+    def make_self(self):
+        verify_dir(self.object_dir)
+        obj_files = []
+        for source in self.source_files:
+            obj_files.append(self.update_obj(source))
+        dependency_files = []
+        for dependency in self.proj_dependencies:
+            assert isinstance(dependency, Target)
+            if dependency.target_type != "exe":
+                dependency_files.append(dependency.target_dir + dependency.target_name)
+        if target_is_latest(self.target_dir + self.target_name, obj_files + dependency_files):
+            return self
+
+        verify_dir(self.target_dir)
+        if self.target_type == "exe":
+            self.make_exe(obj_files)
+        if self.target_type == "lib":
+            self.make_lib(obj_files)
+        if self.target_type == "so":
+            self.make_so(obj_files)
+
+        return self
 
     def update_obj(self, src_name: SourceFile):
         obj_name = None
