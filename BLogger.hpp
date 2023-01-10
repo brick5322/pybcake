@@ -90,17 +90,17 @@ private:
 				level = "[Debug]:";
 				break;
 			case LogLevel::Info:
-				level = "[Info]:";
+				level = "[\033[97mInfo\033[0m]:";
 				break;
 			case LogLevel::Warning:
-				level = "[Warning]:";
+				level = "[\033[33mWarning\033[0m]:";
 				break;
 			case LogLevel::Error:
-				level = "[Error]:";
+				level = "[\033[91mError\033[0m]:";
 				stream = &error_logout;
 				break;
 			case LogLevel::Critical:
-				level = "[Critical]:";
+				level = "[\033[91;52mCritical\033[0m]:";
 				stream = &error_logout;
 				break;
 			default:
