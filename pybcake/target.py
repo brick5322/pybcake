@@ -261,6 +261,12 @@ class MultiMake(Thread):
         self.run = run_closure
 
 
+'''
+    def run(self):
+        self.target.make_self()
+'''
+
+
 class MultiUpdObj(Thread):
     def __init__(self, make_obj: Target, src_file: SourceFile, thr_sem: Semaphore, tar_sem: Semaphore):
         super().__init__()
@@ -301,6 +307,24 @@ def multi_make(nb_thread: int, objs: list):
         i.start()
     for i in make_works:
         i.join()
+
+
+'''
+    alive_thread_count = len(make_works) if nb_thread > len(make_works) else nb_thread
+
+    for i in range(alive_thread_count):
+        make_works[i].start()
+    while alive_thread_count:
+        j = 0
+        while j < alive_thread_count:
+            if not make_works[j].is_alive():
+                make_works.pop(j)
+                if len(make_works) >= alive_thread_count:
+                    make_works[alive_thread_count - 1].start()
+                else:
+                    alive_thread_count -= 1
+            j += 1
+'''
 
 
 def target_is_latest(target_file: str, dependency: list) -> bool:
