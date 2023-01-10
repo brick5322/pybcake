@@ -2,22 +2,28 @@ import os
 import re
 
 
-def find_file(from_dir: str, suffix=None):
+def find_file(from_dir: str, suffix=None, recursive: bool = False):
     file = []
-    for _, _, f in os.walk(from_dir):
-        file += f
     if not suffix:
         return file
+    if recursive:
+        for root, _, files in os.walk(from_dir):
+            for f in files:
+                file.append(root + "/" + f)
+    else:
+        if not from_dir.endswith("/"):
+            from_dir += "/"
+        for f in os.listdir(from_dir):
+            if os.path.isfile(f):
+                file.append(from_dir + f)
     assert isinstance(suffix, list)
     ret = []
-    if not from_dir.endswith("/"):
-        from_dir += "/"
     for i in file:
         for j in suffix:
             if j[0] == '.':
                 j = j.split('.')[-1]
             if re.search(".*\\." + j + "$", i):
-                ret.append(from_dir + i)
+                ret.append(i)
                 continue
     return ret
 
