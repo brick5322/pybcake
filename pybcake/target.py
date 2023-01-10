@@ -1,6 +1,7 @@
 import os
 import re
 from threading import Thread
+from threading import Semaphore
 from .sourcefile import SourceFile
 
 
@@ -245,44 +246,70 @@ class Target:
 
 
 class MultiMake(Thread):
-    def __init__(self, make_obj: Target):
+    def __init__(self, make_obj: Target, thr_sem: Semaphore):
         super().__init__()
         self.target = make_obj
         self.tar_name = make_obj.target_name
+        self.tar_sem = Semaphore(len(self.target.source_files))
 
+        def run_closure():
+            for i in range(len(self.target.source_files)):
+                self.tar_sem.acquire()
+            thr_sem.acquire()
+            self.target.make_self()
+
+        self.run = run_closure
+
+
+'''
     def run(self):
         self.target.make_self()
+'''
 
 
 class MultiUpdObj(Thread):
-    def __init__(self, make_obj: Target, src_file: SourceFile):
+    def __init__(self, make_obj: Target, src_file: SourceFile, thr_sem: Semaphore, tar_sem: Semaphore):
         super().__init__()
         self.tar_name = src_file.filename
+        tar_sem.acquire()
 
         def run_closure():
-            return make_obj.update_obj(src_file)
+            thr_sem.acquire()
+            make_obj.update_obj(src_file)
+            tar_sem.release()
+            thr_sem.release()
 
         self.run = run_closure
 
 
 def multi_make(nb_thread: int, objs: list):
     make_works = []
+    thr_sem = Semaphore(nb_thread)
+
     for tar in objs:
-        make_works.append(MultiMake(tar))
+        tar_work = MultiMake(tar, thr_sem)
+        make_works.append(tar_work)
         assert isinstance(tar, Target)
         for src in tar.source_files:
-            make_works.append(MultiUpdObj(tar, src))
+            make_works.append(MultiUpdObj(tar, src, thr_sem, tar_work.tar_sem))
 
     for i in make_works:
         if isinstance(i, MultiMake):
             for tar in i.target.proj_dependencies:
-                make_works.append(MultiMake(tar))
+                tar_work = MultiMake(tar, thr_sem)
+                make_works.append(MultiMake(tar, thr_sem))
                 assert isinstance(tar, Target)
                 for src in tar.source_files:
-                    make_works.append(MultiUpdObj(tar, src))
+                    make_works.append(MultiUpdObj(tar, src, thr_sem, tar_work.tar_sem))
 
     make_works = make_works[::-1]
+    for i in make_works:
+        i.start()
+    for i in make_works:
+        i.join()
 
+
+'''
     alive_thread_count = len(make_works) if nb_thread > len(make_works) else nb_thread
 
     for i in range(alive_thread_count):
@@ -297,6 +324,7 @@ def multi_make(nb_thread: int, objs: list):
                 else:
                     alive_thread_count -= 1
             j += 1
+'''
 
 
 def target_is_latest(target_file: str, dependency: list) -> bool:
