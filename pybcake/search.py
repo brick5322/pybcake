@@ -14,7 +14,7 @@ def find_file(from_dir: str, suffix=None, recursive: bool = False):
         if not from_dir.endswith("/"):
             from_dir += "/"
         for f in os.listdir(from_dir):
-            if os.path.isfile(f):
+            if os.path.isfile(os.path.abspath(from_dir+f)):
                 file.append(from_dir + f)
     assert isinstance(suffix, list)
     ret = []
