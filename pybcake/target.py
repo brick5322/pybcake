@@ -6,12 +6,6 @@ from .sourcefile import SourceFile
 
 
 class Target:
-    default_compilers = {
-        ".cpp": "g++",
-        ".c": "gcc",
-        ".f90": "gfortran"
-    }
-
     def __init__(self, source_files: list, target_name: str, target_type="exe"):
         if target_type != "exe" and target_type != "lib" and target_type != "so":
             raise ValueError("type should be \"exe\" or \"lib\" or \"so\"")
@@ -29,7 +23,7 @@ class Target:
         self.libs = []
         self.proj_dependencies = []
         self.options = []
-        self.compilers = Target.default_compilers
+        self.compilers = {}
         if target_type == "lib":
             if not re.findall("lib.*\\.a", target_name):
                 self.target_name = "lib" + target_name + ".a"
@@ -242,9 +236,48 @@ class Target:
         print(command)
         print(os.popen(command + " 2>&1").read(), end='')
 
-    def add_dependency(self, dependency: object):
+    def add_dependency(self, dependency):
         if not self.proj_dependencies.count(dependency):
             self.proj_dependencies.append(dependency)
+        return self
+
+    def add_dependencies(self,dependencies:list):
+        self.proj_dependencies = list(set(self.proj_dependencies) | set(dependencies))
+        return self
+
+    def __add__(self, opts: dict):
+        ret = self
+        for k, v in opts.items():
+            try:
+                opt = getattr(self, k)
+                assert isinstance(opt, list)
+                if isinstance(v, list):
+                    setattr(ret, k, opt + v)
+                elif isinstance(v, str):
+                    setattr(ret, k, opt + [v])
+            except Exception as e:
+                print("Warning")
+                traceback.print_exc()
+                continue
+        return ret
+
+    def __sub__(self, opts: object):
+        ret = self
+        for k, v in opts.items():
+            try:
+                opt = getattr(self, k)
+                assert isinstance(opt, list)
+                if isinstance(v, list):
+                    for i in v:
+                        opt.remove(i)
+                elif isinstance(v, str):
+                    opt.remove(v)
+                setattr(ret.opt)
+            except Exception as e:
+                print("Warning")
+                traceback.print_exc()
+                continue
+        return ret
 
 
 class MultiMake(Thread):
