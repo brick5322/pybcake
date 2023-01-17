@@ -3,7 +3,7 @@ from .target import Target
 gcc_compilers = {
     ".cpp": "g++",
     ".c": "gcc",
-    #".f90": "gfortran"
+    ".f90": "gfortran"
 }
 
 gcc_opt_templates = {

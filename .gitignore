@@ -3,3 +3,9 @@ __pycache__
 deb_dir/usr
 .idea
 */__pycache__
+core.exe
+core.pdb
+core/.vs
+core/x64
+core/Debug
+core/Release

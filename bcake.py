@@ -8,7 +8,7 @@ def equal_to_default(target):
 
 
 python_ver = "3.9"
-bcake = pbc.gcc_exe(pbc.find_file(".", ["cpp"]), "bcake", target_dir="./deb_dir/usr/bin", mode=pbc.gcc_opt_templates["Release"],
+bcake = pbc.gcc_exe(pbc.find_file("./core", ["cpp"]), "bcake", target_dir="./deb_dir/usr/bin", mode=pbc.gcc_opt_templates["Release"],
                     include_dirs=["/usr/include/python" + python_ver], libs=["python" + python_ver])
 
 

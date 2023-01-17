@@ -178,7 +178,7 @@ class Target:
                 obj_name = src_name.filename[:-len(k)] + ".o"
                 compiler = v
         if compiler is None:
-            raise ValueError(src_name.filename + "cannot find matched compiler")
+            raise ValueError(src_name.filename + " cannot find matched compiler")
         if compiler == "g++":
             if not self.libs.count("stdc++"):
                 self.libs.append("stdc++")
@@ -292,6 +292,7 @@ class MultiMake(Thread):
                 self.tar_sem.acquire()
             thr_sem.acquire()
             self.target.make_self()
+            thr_sem.release()
 
         self.run = run_closure
 
@@ -332,9 +333,13 @@ def multi_make(nb_thread: int, objs: list):
                     make_works.append(MultiUpdObj(tar, src, thr_sem, tar_work.tar_sem))
 
     make_works = make_works[::-1]
+    make_works_set = []
     for i in make_works:
+        if i not in make_works_set:
+            make_works_set.append(i)
+    for i in make_works_set:
         i.start()
-    for i in make_works:
+    for i in make_works_set:
         i.join()
 
 
