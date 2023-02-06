@@ -3,7 +3,7 @@ import re
 from threading import Thread
 from threading import Semaphore
 from .sourcefile import SourceFile
-
+import traceback
 
 class Target:
     def __init__(self, source_files: list, target_name: str, target_type="exe"):
@@ -360,3 +360,5 @@ def verify_dir(directory: str):
         os.makedirs(directory)
     except FileExistsError:
         pass
+
+__all__ = ["Target","multi_make"]

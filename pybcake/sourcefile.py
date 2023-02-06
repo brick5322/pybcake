@@ -1,8 +1,7 @@
 import os
-from .search import *
-
 
 class SourceFile:
+    find_deps_funcs = {}
     def __init__(self, filename: str, include_dirs: list):
         self.dependency = []
         self.filename = filename
@@ -12,8 +11,9 @@ class SourceFile:
         dependency = []
         if key == "include_dirs":
             src_dir, src_name = os.path.split(self.filename)
-            if src_name.endswith(".c") or src_name.endswith(".cpp") \
-                    or src_name.endswith(".h") or src_name.endswith(".hpp"):
-                dependency += find_c_dependency(self.filename, value)
+            try :
+                dependency += SourceFile.find_deps_funcs["."+src_name.split(".")[-1]](self.filename,value)
                 object.__setattr__(self, "dependency", dependency)
+            except KeyError:
+                pass
         return object.__setattr__(self, key, value)
