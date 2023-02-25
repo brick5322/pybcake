@@ -8,19 +8,32 @@ from .fortran_deps import *
 def lib(target_name: str, sources: list, output_dir=None, obj_dir=None, include_dirs=None, definitions=None,
         additional_options=None, mod_dir=None, configuration=None,
         lib_gen=GccLibGenerator,
-        c_compile_gen=GccCompileGenerator(),
-        cpp_compile_gen=GccCompileGenerator(),
-        c_precompile_gen=HeaderCompilePreGenerator(),
-        fortran_compile_gen=GccCompileGenerator()):
+        c_compile_gen=None,
+        cpp_compile_gen=None,
+        c_precompile_gen=None,
+        fortran_compile_gen=None):
+
+    if c_compile_gen is None:
+        c_compile_gen = GccCompileGenerator()
+    if cpp_compile_gen is None:
+        cpp_compile_gen = GccCompileGenerator()
+    if c_precompile_gen is None:
+        c_precompile_gen = HeaderCompilePreGenerator()
+    if fortran_compile_gen is None:
+        fortran_compile_gen = GccCompileGenerator()
+        
     if additional_options is None:
         additional_options = []
     assert isinstance(additional_options, list)
+
     if definitions is None:
         definitions = []
     assert isinstance(definitions, list)
+
     if include_dirs is None:
         include_dirs = []
     assert isinstance(include_dirs, list)
+
     if configuration is None:
         configuration = {}
     assert isinstance(configuration, dict)
@@ -32,6 +45,7 @@ def lib(target_name: str, sources: list, output_dir=None, obj_dir=None, include_
             os.makedirs(output_dir)
         except OSError:
             pass
+
     if not output_dir.endswith("/"):
         output_dir = output_dir + "/"
 
@@ -94,12 +108,12 @@ def lib(target_name: str, sources: list, output_dir=None, obj_dir=None, include_
         group.pre_generate.append(c_precompile_gen)
         ret_lib.sources.append(group)
 
-        fortran_compile_gen += {
-            "include_dirs": [mod_dir],
-            "definitions": definitions,
-            "additional_options": additional_options
-        }
-        fortran_compile_gen += configuration
+    fortran_compile_gen += {
+        "include_dirs": [mod_dir],
+        "definitions": definitions,
+        "additional_options": additional_options
+    }
+    fortran_compile_gen += configuration
 
     def fortran_initializer(filename: str):
         f_target = Target(obj_dir + filename[:-4] + '.o')
@@ -110,6 +124,8 @@ def lib(target_name: str, sources: list, output_dir=None, obj_dir=None, include_
 
     if fortran_files:
         ret_lib.sources += fortran_file_sort(fortran_files, fortran_initializer)
+
+
 
     return ret_lib
 
@@ -124,30 +140,48 @@ def executable(target_name: str, sources: list,
                lib_dirs=None,
                libs=None,
                configuration=None,
-               c_compile_gen=GccCompileGenerator(),
-               cpp_compile_gen=GccCompileGenerator(),
-               c_precompile_gen=GccCompileGenerator(),
-               fortran_compile_gen=GccCompileGenerator(),
-               executable_gen=GccBinGenerator()
+               c_compile_gen=None,
+               cpp_compile_gen=None,
+               c_precompile_gen=None,
+               fortran_compile_gen=None,
+               executable_gen=None
                ):
+
+    if c_compile_gen is None:
+        c_compile_gen = GccCompileGenerator()
+    if cpp_compile_gen is None:
+        cpp_compile_gen = GccCompileGenerator()
+    if c_precompile_gen is None:
+        c_precompile_gen = HeaderCompilePreGenerator()
+    if fortran_compile_gen is None:
+        fortran_compile_gen = GccCompileGenerator()
+    if executable_gen is None:
+        executable_gen = GccBinGenerator()
+
     if configuration is None:
         configuration = {}
     assert isinstance(configuration, dict)
+
     if additional_options is None:
         additional_options = []
     assert isinstance(additional_options, list)
+
     if definitions is None:
         definitions = []
     assert isinstance(definitions, list)
+
     if include_dirs is None:
         include_dirs = []
     assert isinstance(include_dirs, list)
+
     if lib_dirs is None:
         lib_dirs = []
     assert isinstance(lib_dirs, list)
+
     if libs is None:
         libs = []
     assert isinstance(libs, list)
+
     if output_dir is None:
         output_dir = ""
     else:

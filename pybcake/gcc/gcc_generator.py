@@ -58,16 +58,20 @@ class GccCompileGenerator(Generator):
         cmd += " -c -o " + target.name + " "
 
         for inc in self.include_dirs:
-            cmd += "-I" + inc + " "
+            if isinstance(inc,str):
+                cmd += "-I" + inc + " "
 
         for define in self.definitions:
-            cmd += "-D" + define + " "
+            if isinstance(define,str):
+                cmd += "-D" + define + " "
 
         for src in target.sources:
-            cmd += src + " "
+            if isinstance(src,str):
+                cmd += src + " "
 
         for opt in self.options:
-            cmd += opt + " "
+            if isinstance(opt,str):
+                cmd += opt + " "
 
         return cmd
 
@@ -91,16 +95,20 @@ class GccBinGenerator(Generator):
         cmd += "-o " + target.name + " "
 
         for src in target.sources:
-            cmd += src + " "
+            if isinstance(src,str):
+                cmd += src + " "
 
-        for dirs in self.lib_dirs:
-            cmd += "-L" + dirs + " "
+        for lib_dir in self.lib_dirs:
+            if isinstance(lib_dir,str):
+                cmd += "-L" + lib_dir + " "
 
         for lib in self.libs:
-            cmd += "-l" + lib + " "
+            if isinstance(lib,str):
+                cmd += "-l" + lib + " "
 
         for opt in self.options:
-            cmd += opt + " "
+            if isinstance(opt,str):
+                cmd += opt + " "
 
         return cmd
 
@@ -115,7 +123,8 @@ def GccLibGenerator(target: Target, cmd: str = ""):
     cmd += target.name + " "
 
     for src in target.sources:
-        cmd += src + " "
+        if isinstance(src,str):
+            cmd += src + " "
 
     return cmd
 
@@ -140,13 +149,16 @@ class GccSharedGenerator(Generator):
         cmd += "-o " + target.name + " "
 
         for src in target.sources:
-            cmd += src + " "
+            if isinstance(src,str):
+                cmd += src + " "
 
         for dirs in self.lib_dirs:
-            cmd += "-L" + dirs + " "
+            if isinstance(dirs,str):
+                cmd += "-L" + dirs + " "
 
         for opt in self.options:
-            cmd += opt + " "
+            if isinstance(opt,str):
+                cmd += opt + " "
 
         return cmd
 
@@ -175,7 +187,8 @@ class GfortranPostGenerator(Generator):
 
         cmd += "-J" + self.mod_dir + " "
         for opt in self.options:
-            cmd += opt + " "
+            if isinstance(opt,str):
+                cmd += opt + " "
         return cmd
 
 class HeaderCompilePreGenerator(Generator):
