@@ -1,3 +1,4 @@
+import re
 from ..target import *
 from ..generator import *
 
@@ -8,6 +9,7 @@ def find_c_dependency(filename: str, include_dirs: list, ):
         line = fp.readline()
         while line:
             finc_dependency += re.findall('#include *"(.*)"\n', line)
+            finc_dependency += re.findall('#include *<(.*)>\n', line)
             line = fp.readline()
 
     dep_dirs: list[str] = []
@@ -177,14 +179,16 @@ class GfortranPostGenerator(Generator):
         return cmd
 
 class HeaderCompilePreGenerator(Generator):
-    def __init__(self, inc_dirs:list):
-        self.inc_dirs = inc_dirs
+    def __init__(self, inc_dirs = None):
+        if inc_dirs is None:
+            inc_dirs = []
+        self.include_dirs = inc_dirs
         super().__init__()
     
     def __call__(self, target, cmd: str = ""):
         for filename in target.sources:
             if isinstance(filename,str):
-                target.dep_files += find_c_dependency(filename,self.inc_dirs)
+                target.dep_files += find_c_dependency(filename,self.include_dirs)
 
 __all__ = ["Release", "Debug", "GccLibGenerator", "GccSharedGenerator",
            "GccCompileGenerator", "GccBinGenerator", "GfortranPostGenerator",

@@ -38,7 +38,7 @@ class Group:
 
             target.sources = sources
 
-            if target_is_latest(target.name, sources + dep_targets):
+            if target_is_latest(target.name, sources + dep_targets + target.dep_files):
                 continue
 
             cmd = target.generate(target=target)
