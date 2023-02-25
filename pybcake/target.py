@@ -10,6 +10,7 @@ class Target:
         self.command = None
         self.generate = Generator()
         self.dependency = []
+        self.dep_files = []
 
     def make(self, nb_thread: int = 1, thr_pool: ThreadPoolExecutor = None):
         if thr_pool is None:
@@ -28,7 +29,7 @@ class Target:
 
         self.sources = sources
 
-        if target_is_latest(self.name, sources + dependency_targets):
+        if target_is_latest(self.name, sources + dependency_targets + self.dep_files):
             return [self.name]
         cmd = self.generate(target=self)
 

@@ -54,6 +54,12 @@ int main(int argc, char* argv[])
 
 	PyObject* args = PyTuple_New(0);
 	PyObject* result = PyObject_Call(method, args, nullptr);
+	if (!result)
+	{
+		logger(LogLevel::Error) << "Error Occured:";
+		PyErr_Print();
+		return -1;
+	}
 
 	for (auto i : argi)
 		Py_XDECREF(i);

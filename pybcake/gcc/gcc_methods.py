@@ -10,6 +10,7 @@ def lib(target_name: str, sources: list, output_dir=None, obj_dir=None, include_
         lib_gen=GccLibGenerator,
         c_compile_gen=GccCompileGenerator(),
         cpp_compile_gen=GccCompileGenerator(),
+        c_precompile_gen=HeaderCompilePreGenerator(None),
         fortran_compile_gen=GccCompileGenerator()):
     if additional_options is None:
         additional_options = []
@@ -60,6 +61,8 @@ def lib(target_name: str, sources: list, output_dir=None, obj_dir=None, include_
     c_compile_gen += options
     c_compile_gen += configuration
 
+    c_precompile_gen += options
+
     for file in sources:
         assert isinstance(file, str)
         if file.endswith(".cpp"):
@@ -82,11 +85,13 @@ def lib(target_name: str, sources: list, output_dir=None, obj_dir=None, include_
     if c_targets:
         group = Group("CFiles")
         group.targets = c_targets
+        group.pre_generate = c_precompile_gen
         ret_lib.sources.append(group)
 
     if cpp_targets:
         group = Group("CPPFiles")
         group.targets = cpp_targets
+        group.pre_generate = c_precompile_gen
         ret_lib.sources.append(group)
 
         fortran_compile_gen += {
