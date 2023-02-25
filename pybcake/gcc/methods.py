@@ -1,27 +1,25 @@
 import re
 from ..target import Target
 from ..group import Group
-from .gcc_generator import *
-from .fortran_deps import *
+from .generator import *
+from ..fortran.methods import *
+from copy import copy
 
 
 def lib(target_name: str, sources: list, output_dir=None, obj_dir=None, include_dirs=None, definitions=None,
         additional_options=None, mod_dir=None, configuration=None,
-        lib_gen=GccLibGenerator,
-        c_compile_gen=None,
-        cpp_compile_gen=None,
-        c_precompile_gen=None,
-        fortran_compile_gen=None):
+        lib_gen=LibGen,
+        c_compile_gen = CompileGen(),
+        cpp_compile_gen = CompileGen(),
+        c_precompile_gen = HeaderCompilePreGen(),
+        fortran_compile_gen = CompileGen()
+        ):
 
-    if c_compile_gen is None:
-        c_compile_gen = GccCompileGenerator()
-    if cpp_compile_gen is None:
-        cpp_compile_gen = GccCompileGenerator()
-    if c_precompile_gen is None:
-        c_precompile_gen = HeaderCompilePreGenerator()
-    if fortran_compile_gen is None:
-        fortran_compile_gen = GccCompileGenerator()
-        
+    c_compile_gen = copy(c_compile_gen)
+    cpp_compile_gen = copy(cpp_compile_gen)
+    c_precompile_gen = copy(c_precompile_gen)
+    fortran_compile_gen = copy(fortran_compile_gen)
+
     if additional_options is None:
         additional_options = []
     assert isinstance(additional_options, list)
@@ -140,23 +138,18 @@ def executable(target_name: str, sources: list,
                lib_dirs=None,
                libs=None,
                configuration=None,
-               c_compile_gen=None,
-               cpp_compile_gen=None,
-               c_precompile_gen=None,
-               fortran_compile_gen=None,
-               executable_gen=None
+               c_compile_gen=CompileGen(),
+               cpp_compile_gen=CompileGen(),
+               c_precompile_gen=HeaderCompilePreGen(),
+               fortran_compile_gen=CompileGen(),
+               executable_gen=BinGen()
                ):
 
-    if c_compile_gen is None:
-        c_compile_gen = GccCompileGenerator()
-    if cpp_compile_gen is None:
-        cpp_compile_gen = GccCompileGenerator()
-    if c_precompile_gen is None:
-        c_precompile_gen = HeaderCompilePreGenerator()
-    if fortran_compile_gen is None:
-        fortran_compile_gen = GccCompileGenerator()
-    if executable_gen is None:
-        executable_gen = GccBinGenerator()
+    c_compile_gen = copy(c_compile_gen)
+    cpp_compile_gen = copy(cpp_compile_gen)
+    c_precompile_gen = copy(c_precompile_gen)
+    fortran_compile_gen = copy(fortran_compile_gen)
+    executable_gen = copy(executable_gen)
 
     if configuration is None:
         configuration = {}

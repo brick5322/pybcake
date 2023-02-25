@@ -1,42 +1,8 @@
-import re
+from ..c_cpp.methods import * 
 from ..target import *
 from ..generator import *
 
-def find_c_dependency(filename: str, include_dirs: list, ):
-    src_dir, src_name = os.path.split(filename)
-    finc_dependency = []
-    with open(filename) as fp:
-        line = fp.readline()
-        while line:
-            finc_dependency += re.findall('#include *"(.*)"\n', line)
-            finc_dependency += re.findall('#include *<(.*)>\n', line)
-            line = fp.readline()
-
-    dep_dirs: list[str] = []
-    dependency = []
-    for dep_dir in include_dirs + [src_dir]:
-        if len(dep_dir) == 0:
-            continue
-        elif dep_dir.endswith("/"):
-            dep_dirs.append(dep_dir)
-        else:
-            dep_dirs.append(dep_dir + "/")
-        dep_dirs = list(set(dep_dirs))
-
-    for depend in finc_dependency:
-        for dep_dir in dep_dirs:
-            dep_file = dep_dir + depend
-            if os.path.exists(dep_file):
-                dependency += [dep_file]
-                if src_name.endswith(".c") or src_name.endswith(".cpp") \
-                        or src_name.endswith(".h") or src_name.endswith(".hpp"):
-                    dependency += find_c_dependency(dep_file, include_dirs)
-                dependency = list(set(dependency))
-                break
-    return dependency
-
-
-class GccCompileGenerator(Generator):
+class CompileGen(Generator):
     def __init__(self,
                  include_dirs=None,
                  definitions=None,
@@ -76,7 +42,7 @@ class GccCompileGenerator(Generator):
         return cmd
 
 
-class GccBinGenerator(Generator):
+class BinGen(Generator):
     def __init__(self,
                  lib_dirs=None,
                  libs=None,
@@ -113,7 +79,7 @@ class GccBinGenerator(Generator):
         return cmd
 
 
-def GccLibGenerator(target: Target, cmd: str = ""):
+def LibGen(target: Target, cmd: str = ""):
     cmd = ""
     if target.command is None:
         cmd += "ar rcs "
@@ -129,7 +95,7 @@ def GccLibGenerator(target: Target, cmd: str = ""):
     return cmd
 
 
-class GccSharedGenerator(Generator):
+class SharedGen(Generator):
     def __init__(self,
                  lib_dirs=None,
                  libs=None,
@@ -174,7 +140,7 @@ Release = {
 }
 
 
-class GfortranPostGenerator(Generator):
+class FortPostGen(Generator):
     def __init__(self, mod_dir: str):
         super().__init__()
         self.mod_dir = mod_dir
@@ -191,7 +157,7 @@ class GfortranPostGenerator(Generator):
                 cmd += opt + " "
         return cmd
 
-class HeaderCompilePreGenerator(Generator):
+class HeaderCompilePreGen(Generator):
     def __init__(self, inc_dirs = None):
         if inc_dirs is None:
             inc_dirs = []
@@ -203,6 +169,6 @@ class HeaderCompilePreGenerator(Generator):
             if isinstance(filename,str):
                 target.dep_files += find_c_dependency(filename,self.include_dirs)
 
-__all__ = ["Release", "Debug", "GccLibGenerator", "GccSharedGenerator",
-           "GccCompileGenerator", "GccBinGenerator", "GfortranPostGenerator",
-           "HeaderCompilePreGenerator"]
+__all__ = ["Release", "Debug", "LibGen", "SharedGen",
+           "CompileGen", "BinGen", "FortPostGen",
+           "HeaderCompilePreGen"]
