@@ -107,8 +107,8 @@ class SharedGen(Generator):
             libs = []
         self.libs = libs
         self.lib_dirs = lib_dirs
-        self.options += "-fPIC"
-        self.options += "-shared"
+        self.options.append("-fPIC")
+        self.options.append("-shared")
 
     def __call__(self, target, cmd: str = ""):
         cmd = target.command + " "
@@ -121,6 +121,10 @@ class SharedGen(Generator):
         for dirs in self.lib_dirs:
             if isinstance(dirs,str):
                 cmd += "-L" + dirs + " "
+
+        for lib in self.libs:
+            if isinstance(lib,str):
+                cmd += "-l" + lib + " "
 
         for opt in self.options:
             if isinstance(opt,str):
