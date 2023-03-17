@@ -1,6 +1,7 @@
-from ..c_cpp.methods import * 
+from ..c_cpp.methods import *
 from ..target import *
 from ..generator import *
+
 
 class CompileGen(Generator):
     def __init__(self,
@@ -24,19 +25,19 @@ class CompileGen(Generator):
         cmd += " -c -o " + target.name + " "
 
         for inc in self.include_dirs:
-            if isinstance(inc,str):
+            if isinstance(inc, str):
                 cmd += "-I" + inc + " "
 
         for define in self.definitions:
-            if isinstance(define,str):
+            if isinstance(define, str):
                 cmd += "-D" + define + " "
 
         for src in target.sources:
-            if isinstance(src,str):
+            if isinstance(src, str):
                 cmd += src + " "
 
         for opt in self.options:
-            if isinstance(opt,str):
+            if isinstance(opt, str):
                 cmd += opt + " "
 
         return cmd
@@ -61,19 +62,19 @@ class BinGen(Generator):
         cmd += "-o " + target.name + " "
 
         for src in target.sources:
-            if isinstance(src,str):
+            if isinstance(src, str):
                 cmd += src + " "
 
         for lib_dir in self.lib_dirs:
-            if isinstance(lib_dir,str):
+            if isinstance(lib_dir, str):
                 cmd += "-L" + lib_dir + " "
 
         for lib in self.libs:
-            if isinstance(lib,str):
+            if isinstance(lib, str):
                 cmd += "-l" + lib + " "
 
         for opt in self.options:
-            if isinstance(opt,str):
+            if isinstance(opt, str):
                 cmd += opt + " "
 
         return cmd
@@ -89,7 +90,7 @@ def LibGen(target: Target, cmd: str = ""):
     cmd += target.name + " "
 
     for src in target.sources:
-        if isinstance(src,str):
+        if isinstance(src, str):
             cmd += src + " "
 
     return cmd
@@ -115,19 +116,19 @@ class SharedGen(Generator):
         cmd += "-o " + target.name + " "
 
         for src in target.sources:
-            if isinstance(src,str):
+            if isinstance(src, str):
                 cmd += src + " "
 
         for dirs in self.lib_dirs:
-            if isinstance(dirs,str):
+            if isinstance(dirs, str):
                 cmd += "-L" + dirs + " "
 
         for lib in self.libs:
-            if isinstance(lib,str):
+            if isinstance(lib, str):
                 cmd += "-l" + lib + " "
 
         for opt in self.options:
-            if isinstance(opt,str):
+            if isinstance(opt, str):
                 cmd += opt + " "
 
         return cmd
@@ -157,21 +158,23 @@ class FortPostGen(Generator):
 
         cmd += "-J" + self.mod_dir + " "
         for opt in self.options:
-            if isinstance(opt,str):
+            if isinstance(opt, str):
                 cmd += opt + " "
         return cmd
 
+
 class HeaderCompilePreGen(Generator):
-    def __init__(self, inc_dirs = None):
+    def __init__(self, inc_dirs=None):
         if inc_dirs is None:
             inc_dirs = []
         self.include_dirs = inc_dirs
         super().__init__()
-    
+
     def __call__(self, target, cmd: str = ""):
         for filename in target.sources:
-            if isinstance(filename,str):
-                target.dep_files += find_c_dependency(filename,self.include_dirs)
+            if isinstance(filename, str):
+                target.dep_files += find_c_dependency(filename, self.include_dirs)
+
 
 __all__ = ["Release", "Debug", "LibGen", "SharedGen",
            "CompileGen", "BinGen", "FortPostGen",

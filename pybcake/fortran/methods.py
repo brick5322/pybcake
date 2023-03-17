@@ -53,8 +53,12 @@ def find_mod(filename: str):
 
 def fortran_file_sort(files: list, target_initializer):
     modules = {}
+    module_non_files = []
     for f in files:
-        for mod in find_mod(f):
+        mods = find_mod(f)
+        if not mods:
+            module_non_files.append(f)
+        for mod in mods:
             modules[mod.module] = mod
 
     for mod in modules.values():
@@ -64,6 +68,11 @@ def fortran_file_sort(files: list, target_initializer):
         mod.entry_degree = len(mod.dependency)
     ret_groups = []
     added_files = set()
+
+    group = Group("FortranFiles")
+    for file in module_non_files:
+        group.targets.append(target_initializer(file))
+    ret_groups.append(group)
 
     time_left = len(modules)
     while time_left:

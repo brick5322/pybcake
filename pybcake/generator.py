@@ -38,11 +38,10 @@ class Generator:
         return self
 
     def __copy__(self):
-        ret = self.__class__() 
-        for k,v in self.__dict__.items():
-            if isinstance(v,list):
-                setattr(ret,k,copy(v))
+        ret = self.__class__()
+        for k, v in self.__dict__.items():
+            if isinstance(v, list):
+                setattr(ret, k, copy(v))
             else:
-                setattr(ret,k,v)
+                setattr(ret, k, v)
         return ret
-

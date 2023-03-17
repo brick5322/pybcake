@@ -9,12 +9,11 @@ from copy import copy
 def lib(target_name: str, sources: list, output_dir=None, obj_dir=None, include_dirs=None, definitions=None,
         additional_options=None, mod_dir=None, configuration=None,
         lib_gen=LibGen,
-        c_compile_gen = CompileGen(),
-        cpp_compile_gen = CompileGen(),
-        c_precompile_gen = HeaderCompilePreGen(),
-        fortran_compile_gen = CompileGen()
+        c_compile_gen=CompileGen(),
+        cpp_compile_gen=CompileGen(),
+        c_precompile_gen=HeaderCompilePreGen(),
+        fortran_compile_gen=CompileGen()
         ):
-
     c_compile_gen = copy(c_compile_gen)
     cpp_compile_gen = copy(cpp_compile_gen)
     c_precompile_gen = copy(c_precompile_gen)
@@ -123,8 +122,6 @@ def lib(target_name: str, sources: list, output_dir=None, obj_dir=None, include_
     if fortran_files:
         ret_lib.sources += fortran_file_sort(fortran_files, fortran_initializer)
 
-
-
     return ret_lib
 
 
@@ -144,7 +141,6 @@ def executable(target_name: str, sources: list,
                fortran_compile_gen=CompileGen(),
                executable_gen=BinGen()
                ):
-
     c_compile_gen = copy(c_compile_gen)
     cpp_compile_gen = copy(cpp_compile_gen)
     c_precompile_gen = copy(c_precompile_gen)
@@ -273,23 +269,23 @@ def executable(target_name: str, sources: list,
 
     return ret_bin
 
-def share(target_name: str, sources: list,
-               output_dir=None,
-               obj_dir=None,
-               include_dirs=None,
-               definitions=None,
-               additional_options=None,
-               mod_dir=None,
-               lib_dirs=None,
-               libs=None,
-               configuration=None,
-               c_compile_gen=CompileGen(),
-               cpp_compile_gen=CompileGen(),
-               c_precompile_gen=HeaderCompilePreGen(),
-               fortran_compile_gen=CompileGen(),
-               shared_gen=SharedGen()
-               ):
 
+def share(target_name: str, sources: list,
+          output_dir=None,
+          obj_dir=None,
+          include_dirs=None,
+          definitions=None,
+          additional_options=None,
+          mod_dir=None,
+          lib_dirs=None,
+          libs=None,
+          configuration=None,
+          c_compile_gen=CompileGen(),
+          cpp_compile_gen=CompileGen(),
+          c_precompile_gen=HeaderCompilePreGen(),
+          fortran_compile_gen=CompileGen(),
+          shared_gen=SharedGen()
+          ):
     c_compile_gen = copy(c_compile_gen)
     cpp_compile_gen = copy(cpp_compile_gen)
     c_precompile_gen = copy(c_precompile_gen)
