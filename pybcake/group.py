@@ -9,8 +9,8 @@ class Group:
     def __init__(self, group_name: str = ""):
         self.group_name = group_name
         self.targets = []
-        self.pre_generate = [Generator()]
-        self.post_generate = [Generator()]
+        self.pre_generate = []
+        self.post_generate = []
         self.dependency = []
 
     def make(self, nb_thread: int = 1, thr_pool: ThreadPoolExecutor = None):
@@ -26,6 +26,8 @@ class Group:
 
             for generate in self.pre_generate:
                 generate(target=target)
+
+            self.pre_generate = []
 
             sources = []
 
@@ -53,8 +55,6 @@ class Group:
 
             print(cmd)
             tasks.append(thr_pool.submit(os.system, cmd))
-        
-        self.pre_generate = []
 
         for task in tasks:
             task.result()
