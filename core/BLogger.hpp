@@ -15,12 +15,19 @@ constexpr LogLevel Blogger_minimum_loglovel = LogLevel::Debug;
 
 
 #ifdef _WIN32
-const char* std_out = "CON";
-const char* std_err = "CON";
+static const char* std_out = "CON";
+static const char* std_err = "CON";
 #elif defined(__linux__)
-const char* std_out = "/dev/stdout";
-const char* std_err = "/dev/stderr";
+static const char* std_out = "/dev/stdout";
+static const char* std_err = "/dev/stderr";
 #endif 
+
+#ifndef BLOGGER_MULTI_THREAD
+#define BLOGGER_SINGLE_THREAD
+#endif
+
+#define BDEBUG(loglevel) \
+logger(loglevel)<<"file: "<<__FILE__<<", line:"<<__LINE__;
 
 class BLogger;
 
@@ -45,7 +52,9 @@ public:
 private:
 	std::ofstream basic_logout;
 	std::ofstream error_logout;
+#ifdef BLOGGER_SINGLE_THREAD
 	std::mutex mtx;
+#endif
 	LogLevel mask;
 	bool use_ms;
 
@@ -122,18 +131,26 @@ public:
 	
 	void log(LogLevel lv, const char* description) {
 
+#ifdef BLOGGER_SINGLE_THREAD
 		mtx.lock();
+#endif
 		basicLog(lv) << description << std::endl;
+#ifdef BLOGGER_SINGLE_THREAD
 		mtx.unlock();
+#endif
 	}
 	
 	BLoggerStream operator()(LogLevel lv = LogLevel::Debug) {
+#ifdef BLOGGER_SINGLE_THREAD
 		mtx.lock();
+#endif
 		return BLoggerStream(*this,lv);
 	}
 	template <typename T>
 	BLoggerStream operator<<(const T& info) {
+#ifdef BLOGGER_SINGLE_THREAD
 		mtx.lock();
+#endif
 		BLoggerStream ret(*this, LogLevel::Debug);
 		ret << info;
 		return ret;
@@ -149,7 +166,9 @@ BLoggerStream::~BLoggerStream()
 {
 	if (lv > logger.mask)
 		stream << std::endl;
+#ifdef BLOGGER_SINGLE_THREAD
 	logger.mtx.unlock();
+#endif
 }
 
 template <typename T>
@@ -158,3 +177,5 @@ BLoggerStream& BLoggerStream::operator<<(const T& info) {
 		stream << info;
 	return *this;
 }
+
+static BLogger logger;

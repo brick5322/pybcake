@@ -15,12 +15,14 @@ def release():
     bcake.make()
     os.system("mkdir -p deb_dir/usr/lib/python3/dist-packages")
     os.system("cp -r ./pybcake deb_dir/usr/lib/python3/dist-packages")
+    os.system("cp ./core/bcake deb_dir/usr/bin")
     os.system("chmod 0755 ./deb_dir/DEBIAN")
     os.system("dpkg -b ./deb_dir .")
 
 
 def install():
     bcake.make()
+    os.system("sudo cp ./core/bcake /usr/bin")
     os.system("sudo rm -r /usr/lib/python3/dist-packages/pybcake/*")
     os.system("sudo cp -r ./pybcake /usr/lib/python3/dist-packages")
 
