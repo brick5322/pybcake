@@ -9,3 +9,5 @@ core/.vs
 core/x64
 core/Debug
 core/Release
+core/*.o
+core/bcake
