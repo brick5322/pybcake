@@ -3,10 +3,16 @@ import json
 from copy import copy
 
 
+default_jsons = []
+
 class Generator:
-    def __init__(self):
+    def __init__(self,json_keys:list = []):
         self.options = []
-        pass
+        assert(isinstance(json_keys,list))
+        for json_file in default_jsons:
+            for key in json_keys:
+                self.load_options(json_file,key)
+
 
     @abstractmethod
     def __call__(self, target, cmd: str = ""):
@@ -14,12 +20,14 @@ class Generator:
 
     def load_options(self, json_name: str, json_key: str = None):
         with open(json_name) as fjson:
-            options = None
+            options = {} 
             if json_key is None:
                 options = json.load(fjson)
             else:
-                options = json.load(fjson)[json_key]
-
+                try:
+                    options = json.load(fjson)[json_key]
+                except KeyError:
+                    pass
             keys = self.__dict__.keys() & options.keys()
 
             for i in keys:

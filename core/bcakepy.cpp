@@ -85,7 +85,7 @@ int main(int argc,char** argv)
     arg_list = PySet_New(0);
     if(!arg_list)
         goto arg_list_err;
-    
+
     for(auto&arg : args)
     {
         if(arg.second.empty())
@@ -120,17 +120,30 @@ int main(int argc,char** argv)
     cmd = PyObject_GetAttrString(pyargs,"command");
     if(!cmd)
         goto cmd_err;
-    logger(LogLevel::Info) << "Doing Task \'\033[33m" << PyUnicode_AsUTF8(cmd) << "\033[0m\'";
     cmd_method = PyObject_GetAttr(bcake,cmd);
     if(!cmd_method)
-        goto command_err;
+    {
+        if(argc < 2)
+            goto command_err;
+        if(strcmp(argv[1],"vscode"))
+            goto command_err;
+        PyObject* vscode_mod = PyImport_ImportModule("pybcake.vscode");
+        if(!vscode_mod)
+            goto command_err;
+        PyErr_Clear();
+        cmd_method = PyObject_GetAttrString(vscode_mod,"vscode_init");
+        Py_DECREF(vscode_mod);
+        if(!cmd_method)
+            goto command_err;
+    }
 
+    logger(LogLevel::Info) << "Doing Task \'\033[33m" << PyUnicode_AsUTF8(cmd)<< "\033[0m\'";
     Py_XDECREF(PyObject_CallNoArgs(cmd_method));
     if(PyErr_Occurred())
         goto call_err;
     logger(LogLevel::Info) << "Task Finish";
 
-    
+
     Py_DECREF(cmd_method);
     Py_DECREF(cmd);
     Py_DECREF(bcake);

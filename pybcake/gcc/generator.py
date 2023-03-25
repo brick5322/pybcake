@@ -5,11 +5,11 @@ from ..generator import *
 
 class CompileGen(Generator):
     def __init__(self,
+                 json_keys:list = [],
                  include_dirs=None,
                  definitions=None,
                  additional_options=None
                  ):
-        super().__init__()
         if additional_options is None:
             additional_options = []
         if definitions is None:
@@ -19,6 +19,7 @@ class CompileGen(Generator):
         self.definitions = definitions
         self.include_dirs = include_dirs
         self.options = additional_options
+        super().__init__(json_keys)
 
     def __call__(self, target: Target, cmd: str = ""):
         cmd = target.command
@@ -45,10 +46,10 @@ class CompileGen(Generator):
 
 class BinGen(Generator):
     def __init__(self,
+                 json_keys:list = [],
                  lib_dirs=None,
                  libs=None,
                  ):
-        super().__init__()
         if lib_dirs is None:
             lib_dirs = []
         if libs is None:
@@ -56,6 +57,7 @@ class BinGen(Generator):
 
         self.libs = libs
         self.lib_dirs = lib_dirs
+        super().__init__(json_keys)
 
     def __call__(self, target, cmd: str = ""):
         cmd = target.command + " "
@@ -98,16 +100,17 @@ def LibGen(target: Target, cmd: str = ""):
 
 class SharedGen(Generator):
     def __init__(self,
+                 json_keys:list = [],
                  lib_dirs=None,
                  libs=None,
                  ):
-        super().__init__()
         if lib_dirs is None:
             lib_dirs = []
         if libs is None:
             libs = []
         self.libs = libs
         self.lib_dirs = lib_dirs
+        super().__init__(json_keys)
         self.options.append("-fPIC")
         self.options.append("-shared")
 
@@ -146,9 +149,11 @@ Release = {
 
 
 class FortPostGen(Generator):
-    def __init__(self, mod_dir: str):
-        super().__init__()
+    def __init__(self,
+                 json_keys:list = [],
+                 mod_dir: str = ""):
         self.mod_dir = mod_dir
+        super().__init__(json_keys)
 
     def __call__(self, target, cmd: str = ""):
         try:
@@ -156,7 +161,8 @@ class FortPostGen(Generator):
         except OSError:
             pass
 
-        cmd += "-J" + self.mod_dir + " "
+        if self.mod_dir:
+            cmd += "-J" + self.mod_dir + " "
         for opt in self.options:
             if isinstance(opt, str):
                 cmd += opt + " "
@@ -164,11 +170,13 @@ class FortPostGen(Generator):
 
 
 class HeaderCompilePreGen(Generator):
-    def __init__(self, inc_dirs=None):
+    def __init__(self,
+                 json_keys:list = [],
+                 inc_dirs=None):
         if inc_dirs is None:
             inc_dirs = []
         self.include_dirs = inc_dirs
-        super().__init__()
+        super().__init__(json_keys)
 
     def __call__(self, target, cmd: str = ""):
         for filename in target.sources:

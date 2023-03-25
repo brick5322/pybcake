@@ -1,15 +1,23 @@
 import pybcake as pbc
 import os
+import shutil
 
 python_ver = "3.9"
 
+config = [pbc.gcc.Release,"Release"]
+
+try:
+    if pbc.gcc.config == "Debug":
+        config = [pbc.gcc.Debug,"Debug"]
+except:
+    pass
+
 bcake = pbc.gcc.executable("bcake", ["./core/bcakepy.cpp"],
-                           output_dir="./core",
+                           output_dir="core/x64/" + config[1] + "/core",
                            include_dirs=["/usr/include/python" + python_ver],
-                           configuration=pbc.gcc.Release,
+                           configuration=config[0],
                            libs=["python" + python_ver]
                            )
-
 
 def release():
     bcake.make()
@@ -22,9 +30,12 @@ def release():
 
 def install():
     bcake.make()
-    os.system("sudo cp ./core/bcake /usr/bin")
+    os.system("sudo cp " + bcake.name + " /usr/bin")
     os.system("sudo rm -r /usr/lib/python3/dist-packages/pybcake/*")
     os.system("sudo cp -r ./pybcake /usr/lib/python3/dist-packages")
+
+def clean():
+    shutil.rmtree("x64/" + config[1])
 
 # before you make and install ,uncommit this to make
 # after that, you can commit this to test
